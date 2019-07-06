@@ -1,6 +1,9 @@
 #%%
 # This program is built to distinguish between positive and negative malaria infection from 
 # the human dried blood spot (DBS)
+
+# The analysis script was adapted from https://github.com/SimonAB/Gonzalez-Jimenez_MIRS; and has been changed to accommodate this specific analysis 
+
 import this
 
 #%%
