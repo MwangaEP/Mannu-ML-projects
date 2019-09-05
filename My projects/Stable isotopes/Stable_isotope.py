@@ -5,7 +5,7 @@
 
 import this
 import os
-import io
+import io # saving test as dataframes
 import ast
 import itertools
 import collections
@@ -147,6 +147,7 @@ df.to_csv("D:\Projects\Isotope Samples\Data\stable_isotope.csv")
 
 
 #%%
+# renaming details in columns of interest
 df = pd.read_csv("D:\Projects\Isotope Samples\Data\stable_isotope.csv")
 df.head()
 
@@ -199,7 +200,7 @@ validation_set.to_csv("D:\Projects\Isotope Samples\ML-analysis\set_validation.cs
 
 #%%
 # Since our data has the imbalance structure,
-# we will now rescale the data at least to have consistence between classes
+# we will now undersample our data at least to have consistence between classes
 df = pd.read_csv("D:\Projects\Isotope Samples\ML-analysis\set_training.csv") 
 
 X = df.iloc[:,9:] # matrix of features
@@ -227,7 +228,7 @@ X_new
 # Data splitting and defining models
 num_folds = 7 # Spliting the training set into 10 parts
 validation_size = 0.2 # defining the size of the validation set
-seed = 4 # you can choose any integer, this ensures reproducibility of the tests
+seed = 4 # choose any integer, this ensures reproducibility of the tests
 scoring = 'accuracy' # score model accuracy
 
 skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=seed)
@@ -312,7 +313,6 @@ plt.ylabel('Accuracy');
 
 #%%
 # standardizing the data
-# X_resampled
 X_new = StandardScaler().fit_transform(X_new)
 
 
@@ -352,6 +352,7 @@ plt.savefig("D:\Projects\Isotope Samples\ML-analysis\selection_algorithm_2.png",
 
 
 #%%
+# preparing training dataset
 df = pd.read_csv("D:\Projects\Isotope Samples\ML-analysis\set_training.csv") 
 
 print(df.head(5))
@@ -371,10 +372,9 @@ X
 # BIG LOOP
 
 # TUNNING THE SELECTED MODEL
-# Using logistic regression, and we will train it more to predict test samples for all concentrations
+# Using logistic regression, and we will train it more to predict stable isotopes from mosquito samples
 
-
-## Set validation procedure
+# Set validation procedure
 num_folds = 7 # split training set into 10 parts for validation
 validation_size = 0.2 # size of test set
 num_rounds = 5 # increase this to 5 or 10 once code is bug-free
@@ -391,7 +391,7 @@ start = time()
 sss = StratifiedShuffleSplit(
         n_splits=num_folds, test_size=validation_size, random_state=seed)
 
-# create pipeline
+# create a pipeline
 lgr_pipe = Pipeline([
     ('scaler', StandardScaler()),
     ('clf', LogisticRegressionCV(Cs = 20,
@@ -425,7 +425,7 @@ for round in range(num_rounds): # we do this to ensure we cover as much of the l
 
     # under-sample over-represented classes
     rus = RandomUnderSampler(random_state=seed)
-    X_resampled, y_resampled = rus.fit_sample(X, y) #produces numpy arrays
+    X_resampled, y_resampled = rus.fit_sample(X, y) # produces numpy arrays
 
     # splitting validation set
     for train_index, test_index in sss.split(X_resampled, y_resampled):
@@ -563,7 +563,7 @@ plt.savefig("D:\Projects\Isotope Samples\ML-analysis\lgr_per_class_acc_distrib.p
 
 
 #%%
-# plot the prediction accuracy as a confusion matrix
+# plot the prediction accuracy in a confusion matrix for the training set
 sns.set(context="paper",
     style="whitegrid",
     font_scale=2.0,
@@ -589,8 +589,7 @@ cr.to_csv('classification_report_train.csv')
 ##############################################################
 
 #%%
-# TESTING THE FINAL MODEL IN THE VALIDATION SET (UNSEEN DATA)\
-# for all concentrations
+# TESTING THE FINAL MODEL IN THE VALIDATION SET (UNSEEN DATA)
 
 # dump/save/serialize the final model to the disk for future prediction. 
 
@@ -630,7 +629,7 @@ print("Accuracy:%.2f%%" %(accuracy * 100.0))
 
 
 #%%
-# Plot the prediction accuracy as a confusion matrix
+# Plot the prediction accuracy in a confusion matrix for the new data
 sns.set(context="paper",
    style="whitegrid",
    font_scale = 2.0,
@@ -644,7 +643,7 @@ plt.savefig("D:\Projects\Isotope Samples\ML-analysis\prediction_val_all.png", dp
 
 
 #%%
-# summarizing classification report
+# summarizing classification report for the new data
 Cr2 = classification_report(Y, Y_val_pred)
 print(Cr2)
 
@@ -654,6 +653,3 @@ cr.to_csv('classification_report_validation.csv')
 
 #############################################################
 #############################################################
-
-
-#%%
