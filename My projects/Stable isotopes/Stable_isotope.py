@@ -651,5 +651,50 @@ cr = pd.read_fwf(io.StringIO(Cr2), header=0)
 cr = cr.iloc[1:]
 cr.to_csv('classification_report_validation.csv')
 
+#%%
+# plot number of samples predicted
+# Prepare datasets for no. of samples in validation set 
+
+no_val = pd.read_csv('D:\Projects\Isotope Samples\ML-analysis\classification_report_validation.csv')
+print(no_val.head(5))
+
+no_val = no_val.drop('Unnamed: 0' , axis='columns')
+no_val = no_val.rename(columns = {'Unnamed: 0.1': 'Labels'})
+no_val = no_val[:2]
+no_val['Data_set'] = ['validation', 'validation']
+
+# Prepare datasets for no. of samples in test set 
+no_train = pd.read_csv('D:\Projects\Isotope Samples\ML-analysis\classification_report_train.csv')
+print(no_train.head(5))
+
+no_train = no_train.drop('Unnamed: 0' , axis='columns')
+no_train = no_train.rename(columns = {'Unnamed: 0.1': 'Labels'})
+no_train = no_train[:2]
+no_train['Data_set'] = ['test', 'test']
+
+# Stack the DataFrames on top of each other
+new_dat = pd.concat([no_train, no_val], axis=0)
+print(new_dat)
+
+# plotting
+sns.set(context="paper",
+   style="darkgrid",
+   font_scale = 2.0,
+   rc={"font.family": "Dejavu Sans"})
+
+plt.figure(figsize=(6,8))
+ax = sns.barplot(x="Labels", y="support", data=new_dat, hue= "Data_set")
+plt.xlabel(" ")
+ax.set_ylim(0, 180)
+plt.ylabel("Total no. of samples used for evaluation", weight = 'bold')
+
+#annotate axis = seaborn axis
+for p in ax.patches:
+             ax.annotate("%.2f" % p.get_height(), (p.get_x() + p.get_width() / 2., p.get_height()),
+                 ha='center', va='center', fontsize=15, color='gray', xytext=(0, 20),
+                 textcoords='offset points')
+
+plt.savefig("D:\Projects\Isotope Samples\ML-analysis\samples_total used for evaluation.png", dpi = 500, bbox_inches="tight")
+
 #############################################################
 #############################################################
