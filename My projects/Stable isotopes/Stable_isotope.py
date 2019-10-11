@@ -162,8 +162,7 @@ df.to_csv("D:\Projects\Isotope Samples\Data\stable_isotope_all.csv")
 #%%
 df = pd.read_csv("D:\Projects\Isotope Samples\Data\stable_isotope_all.csv")
 print(df.head())
-# data shape
-print(df.shape)
+print(df.shape) # data shape
 
 #%%
 # Checking class distribution abd correlation in the data
