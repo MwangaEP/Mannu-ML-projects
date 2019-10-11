@@ -214,13 +214,10 @@ sss = StratifiedShuffleSplit(
 models = [] # telling python to create sub names models
 models.append(("KNN", KNeighborsClassifier()))
 models.append(("LR", LogisticRegressionCV(multi_class = 'auto', cv=sss, random_state=seed, max_iter=2000)))
-# models.append(("LDA", LinearDiscriminantAnalysis()))
 models.append(("SVM", SVC(random_state=seed, gamma='auto')))
 models.append(("NB", GaussianNB()))
 models.append(("XGB", XGBClassifier(random_state=seed, nthread=1)))
-# models.append(("CART", DecisionTreeClassifier()))
 models.append(("RF", RandomForestClassifier(random_state=seed, n_estimators=100)))
-# models.append(("GB", GradientBoostingClassifier()))
 models.append(("MLP", MLPClassifier(random_state=seed, max_iter=1000)))
 
 
@@ -247,9 +244,6 @@ for name, model in models:
         name, cv_results.mean(), cv_results.std())
     print(msg)
 
-#%%
-# results_2 = np.round(100*results)
-# results_2
 
 #%%
 # plotting the results of algorithm comparison
@@ -507,7 +501,7 @@ print (validation.head(5))
 
 # age_validation = age_validation.drop(['Species', 'Status', 'Country', 
 #                        'RearCnd', 'StoTime'], axis=1)
-# age_validation.head(5)
+
 
 #%%
 # checking class distribution in the validation set
