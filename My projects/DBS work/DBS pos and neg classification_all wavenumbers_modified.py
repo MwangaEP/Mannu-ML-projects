@@ -6,7 +6,6 @@
 
 import this
 
-#%%
 # Importing all packages that my be needed for the analysis
 import os
 import ast
@@ -133,7 +132,8 @@ def plot_confusion_matrix(cm, classes,
 
 #%%
 
-df = pd.read_csv("Cleaned datamosquitos_mwanga.csv")
+df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\Cleaned datamosquitos_mwanga.csv")
+print(df.head())
 df.describe()
 
 
@@ -147,7 +147,7 @@ class_counts
 
 #%%
 
-df = pd.read_csv("Cleaned datamosquitos_mwanga.csv")
+df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\Cleaned datamosquitos_mwanga.csv")
 X = df.iloc[:,4:] # defining X matrix
 y = df["Status"] # defining Y matrix
 X
@@ -169,17 +169,17 @@ print(train_index.shape, val_index.shape)
 # Saving a training split to the disk
 df.iloc[train_index,:]
 training_DBS = df.iloc[train_index,:]
-training_DBS.to_csv("DBS_train.csv")
+training_DBS.to_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
 
 #%%
 # Saving a validation split to the disk
 df.iloc[val_index,:]
 validation_DBS = df.iloc[val_index,:]
-validation_DBS.to_csv("DBS_validation.csv")
+validation_DBS.to_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_validation.csv")
 
 #%%
 # importing the training split; for ML training
-df = pd.read_csv("DBS_train.csv")
+df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
 print(df.head(5))
 
 # df = df.drop(['Species', 'Status', 'Country', 
@@ -248,6 +248,10 @@ for name, model in models:
     print(msg)
 
 #%%
+# results_2 = np.round(100*results)
+# results_2
+
+#%%
 # plotting the results of algorithm comparison
 
 sns.set(context="paper",
@@ -258,18 +262,18 @@ sns.set(context="paper",
 plt.rcParams["figure.figsize"] = [8,6]
 sns.boxplot(x=names, y=results)
 sns.despine(offset=10, trim=True)
-plt.title("Algorithm comparison", weight="bold")
+plt.title(" ")
 plt.xticks(rotation=90)
-# plt.ylim(0.50, 1.0)
+plt.ylim(0.50, 1.00)
 plt.yticks((0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80,
 0.85, 0.90, 0.95, 1.0))
 plt.ylabel('Accuracy', weight = "bold");
-plt.savefig("Algorithm selection-2.png", dpi = 300, bbox_inches="tight")
+plt.savefig("Algorithm selection_newR.png", dpi = 300, bbox_inches="tight")
 
 
 #%%
 # importing the training split; for ML training
-df = pd.read_csv("DBS_train.csv")
+df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
 print(df.head(5))
 
 df = df.drop(['Species'], axis=1)
@@ -396,9 +400,10 @@ lgr_acc_distrib = sss_results["Accuracy"]
 lgr_acc_distrib.columns=["Accuracy"]
 lgr_acc_distrib.to_csv("lgr_acc_distrib.csv", header=True, index=False)
 lgr_acc_distrib = pd.read_csv("lgr_acc_distrib.csv")
-lgr_acc_distrib = np.round(100*lgr_acc_distrib)
+lgr_acc_distrib = np.round(lgr_acc_distrib, 2)
 print(lgr_acc_distrib)
 
+#%%
 # summarizing coefficients
 sss_coef.dropna(axis=1, inplace=True)
 sss_coef["coef mean"] = sss_coef.mean(axis=1)
@@ -421,10 +426,10 @@ sns.set(context="paper",
     rc={"font.family": "Dejavu Sans"})
 
 plt.figure(figsize=(6,8))
-sns.barplot(data=coef_plot_data, orient="h", palette="coolwarm", capsize=.2)
+sns.barplot(data=coef_plot_data, orient="h", palette="RdYlBu", capsize=.2)
 plt.ylabel("Wavenumbers", weight = "bold")
 plt.xlabel("Coeffients", weight = "bold")
-plt.savefig("lgr_coeffients-2.png", dpi = 300, bbox_inches="tight")
+plt.savefig("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\lgr_coeffients-2_responsetoreview.png", dpi = 300, bbox_inches="tight")
 
 
 #%%
@@ -439,7 +444,7 @@ class_names = y.sort_values().unique()
 lgr_per_class_acc_distrib = pd.DataFrame(sss_per_class_results, columns=class_names)
 lgr_per_class_acc_distrib.dropna().to_csv("lgr_per_class_acc_distrib.csv")
 lgr_per_class_acc_distrib = pd.read_csv("lgr_per_class_acc_distrib.csv", index_col=0)
-lgr_per_class_acc_distrib = np.round(100*lgr_per_class_acc_distrib)
+lgr_per_class_acc_distrib = np.round(lgr_per_class_acc_distrib, 2)
 lgr_per_class_acc_distrib_describe = lgr_per_class_acc_distrib.describe()
 lgr_per_class_acc_distrib_describe.to_csv("lgr_per_class_acc_distrib.csv")
 
@@ -456,10 +461,10 @@ sns.violinplot(x="status new", y="value", cut = 0, data=lgr_per_class_acc_distri
 sns.despine(left=True)
 plt.xticks(rotation=0, ha="right")
 plt.xticks()
-plt.yticks((50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100))
+plt.yticks((0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00))
 plt.xlabel(" ")
-plt.ylabel("Prediction accuracy", weight = "bold")
-plt.savefig("lgr_per_class_acc_distrib-2.png", dpi = 300, bbox_inches="tight")
+plt.ylabel("Accuracy", weight = "bold")
+plt.savefig("lgr_per_class_acc_distrib-2_.png", dpi = 300, bbox_inches="tight")
 
 
 #%%

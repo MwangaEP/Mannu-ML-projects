@@ -585,18 +585,18 @@ cr = pd.read_fwf(io.StringIO(cr), header=0)
 cr = cr.iloc[1:]
 cr.to_csv('classification_report_train.csv')
 
-##############################################################
-##############################################################
-
-#%%
-# TESTING THE FINAL MODEL IN THE VALIDATION SET (UNSEEN DATA)
-
 # dump/save/serialize the final model to the disk for future prediction. 
 
 with open('D:\Projects\Isotope Samples\ML-analysis\isotope_model.pkl', 'wb') as fid:
     pickle.dump(lgr_pipe, fid)
 
+##############################################################
+##############################################################
+
+# TESTING THE MODEL ON THE VALIDATION SET
+
 #%%
+# Import validation set
 validation= pd.read_csv("D:\Projects\Isotope Samples\ML-analysis\set_validation.csv")
 print (validation.head(5))
 
@@ -612,6 +612,12 @@ X = validation.iloc[:,9:]
 Y = validation["Cat4"]
 X
 
+seed = 4
+rus = RandomUnderSampler(random_state = seed)
+X_res, y_res = rus.fit_sample(X, Y)
+y_res_count = collections.Counter(y_res)
+print(y_res_count)
+
 #%%
 # Deserializing the final model from the disk to predict new samples
 
@@ -621,10 +627,10 @@ with open('D:\Projects\Isotope Samples\ML-analysis\isotope_model.pkl', 'rb') as 
 
 #%%
 # Evaluating the final model predicting new samples (validation set)
-Y_val_pred = loaded_model.predict(X)
+Y_val_pred = loaded_model.predict(X_res)
 # predictions = [round(value) for value in Y_val_pred]
 # evaluative prediction
-accuracy = accuracy_score(Y, Y_val_pred)
+accuracy = accuracy_score(y_res, Y_val_pred)
 print("Accuracy:%.2f%%" %(accuracy * 100.0))
 
 
@@ -636,26 +642,26 @@ sns.set(context="paper",
    rc={"font.family": "Dejavu Sans"})
    
 plt.rcParams["figure.figsize"] = [8,6]
-cm = confusion_matrix(Y, Y_val_pred)
-class_names = np.unique(np.sort(Y))
+cm = confusion_matrix(y_res, Y_val_pred)
+class_names = np.unique(np.sort(y_res))
 plot_confusion_matrix(cm, text=True, normalise=True, classes=class_names)
-plt.savefig("D:\Projects\Isotope Samples\ML-analysis\prediction_val_all.png", dpi = 500, bbox_inches="tight")
+plt.savefig("D:\Projects\Isotope Samples\ML-analysis\prediction_vaidation_balanced.png", dpi = 500, bbox_inches="tight")
 
 
 #%%
 # summarizing classification report for the new data
-Cr2 = classification_report(Y, Y_val_pred)
+Cr2 = classification_report(y_res, Y_val_pred)
 print(Cr2)
 
 cr = pd.read_fwf(io.StringIO(Cr2), header=0)
 cr = cr.iloc[1:]
-cr.to_csv('classification_report_validation.csv')
+cr.to_csv('D:\Projects\Isotope Samples\ML-analysis\classification_report_validation_balanced.csv')
 
 #%%
 # plot number of samples predicted
 # Prepare datasets for no. of samples in validation set 
 
-no_val = pd.read_csv('D:\Projects\Isotope Samples\ML-analysis\classification_report_validation.csv')
+no_val = pd.read_csv('D:\Projects\Isotope Samples\ML-analysis\classification_report_validation_balanced.csv')
 print(no_val.head(5))
 
 no_val = no_val.drop('Unnamed: 0' , axis='columns')
@@ -694,7 +700,7 @@ for p in ax.patches:
                  ha='center', va='center', fontsize=15, color='gray', xytext=(0, 20),
                  textcoords='offset points')
 
-plt.savefig("D:\Projects\Isotope Samples\ML-analysis\samples_total used for evaluation.png", dpi = 500, bbox_inches="tight")
+plt.savefig("D:\Projects\Isotope Samples\ML-analysis\samples_total used for evaluation_balanced.png", dpi = 500, bbox_inches="tight")
 
 #############################################################
 #############################################################

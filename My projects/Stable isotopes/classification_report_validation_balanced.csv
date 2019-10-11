@@ -1,0 +1,7 @@
+,Unnamed: 0,precision,recall,f1-score,support
+1,Control,1.0,0.92,0.96,73.0
+2,Treatment,0.92,1.0,0.96,73.0
+3,,,,,
+4,accuracy,,,0.96,146.0
+5,macro avg,0.96,0.96,0.96,146.0
+6,weighted avg,0.96,0.96,0.96,146.0
