@@ -377,7 +377,7 @@ X
 num_folds = 7 # split training set into 10 parts for validation
 validation_size = 0.2 # size of test set
 num_rounds = 5 # increase this to 5 or 10 once code is bug-free
-seed = 4 # pick any integer. This ensures reproducibility of the tests
+# seed = 4 # pick any integer. This ensures reproducibility of the tests
 scoring = 'accuracy' # score model accuracy
 
 # prepare matrices of results
@@ -423,8 +423,9 @@ for round in range(num_rounds): # we do this to ensure we cover as much of the l
     seed=np.random.randint(0, 8147)
 
     # under-sample over-represented classes
-    rus = RandomUnderSampler(random_state=seed)
-    X_resampled, y_resampled = rus.fit_sample(X, y) # produces numpy arrays
+    rus = RandomUnderSampler(random_state=24)
+    # X_resampled, y_resampled = [None, None]
+    X_resampled, y_resampled = rus.fit_resample(X, y) # produces numpy arrays
 
     # splitting validation set
     for train_index, test_index in sss.split(X_resampled, y_resampled):
