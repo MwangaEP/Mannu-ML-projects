@@ -20,24 +20,20 @@ from random import randint
 from collections import Counter 
 
 from My_functions_DL import (
-
-    build_folder, 
-    log_data, 
-    visualize, 
-    graph_history, 
-    graph_history_averaged,
-    combine_dictionaries, 
-    find_mean_from_combined_dicts
-
-    )
+                                build_folder, 
+                                log_data, 
+                                visualize, 
+                                graph_history, 
+                                graph_history_averaged,
+                                combine_dictionaries, 
+                                find_mean_from_combined_dicts
+                            )
 
 from sklearn.model_selection import (
-
-    ShuffleSplit, 
-    train_test_split, 
-    KFold 
-
-    )
+                                        ShuffleSplit, 
+                                        train_test_split, 
+                                        KFold 
+                                    )
     
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -72,15 +68,13 @@ import matplotlib.pyplot as plt # for making plots
 import seaborn as sns
 
 sns.set(
-
-    context = "paper",
+        context = "paper",
         style = "white",
         palette = "deep",
         font_scale = 2.0,
         color_codes = True,
         rc = ({"font.family": "Dejavu Sans"})
-
-        )
+    )
 
 # % matplotlib inline
 plt.rcParams["figure.figsize"] = [6,4]
@@ -185,9 +179,9 @@ def create_models(model_shape, input_layer_dim):
 # Load lab data
 
 blood_meal_lab_df = pd.read_csv(
-    "C:\Mannu\Projects\Mannu Phd\lab data\Blood_meal_lab.dat", 
-    delimiter= '\t'
-    )
+                                "C:\Mannu\Projects\Mannu Phd\lab data\Blood_meal_lab.dat", 
+                                delimiter= '\t'
+                            )
 
 blood_meal_lab_df['Cat3'] = blood_meal_lab_df['Cat3'].str.replace('BF', 'Bovine')
 blood_meal_lab_df['Cat3'] = blood_meal_lab_df['Cat3'].str.replace('HF', 'Human')
@@ -204,9 +198,9 @@ print('Size of blood meal by count', Counter(blood_meal_lab_df['blood_meal']))
 # Load hours blood meal data
 
 blood_hours = pd.read_csv(
-    'C:\Mannu\Projects\JACQUEZ MIRS EXP\Bloodfed_hours.dat', 
-    delimiter = '\t'
-    )
+                            'C:\Mannu\Projects\JACQUEZ MIRS EXP\Bloodfed_hours.dat', 
+                            delimiter = '\t'
+                        )
 
 # Rename items in the column
 blood_hours['Cat3'] = blood_hours['Cat3'].str.replace('CW', 'Bovine')
@@ -214,9 +208,14 @@ blood_hours['Cat3'] = blood_hours['Cat3'].str.replace('HN', 'Human')
 
 # Drop unused columns
 blood_hours = blood_hours.drop(
-    ['Cat1', 'Cat2', 'Cat4', 'StoTime'], 
-    axis=1
-    )
+                                [
+                                    'Cat1', 
+                                    'Cat2', 
+                                    'Cat4', 
+                                    'StoTime'
+                                ], 
+                                axis=1
+                            )
 
 # rename the column
 blood_hours.rename(
@@ -244,9 +243,9 @@ X_trans = scaler.transform(X = X) # transform X
 # Serialize the scaler to a file using joblib
 
 joblib.dump(
-    scaler, 
-    'C:\Mannu\Projects\Mannu Phd\Transfer_learning MLP\_transfer_learning\data_scaler.joblib'
-    )
+                scaler, 
+                'C:\Mannu\Projects\Mannu Phd\Transfer_learning MLP\_transfer_learning\data_scaler.joblib'
+            )
 
 host_list = [[host] for host in y]
 hosts = MultiLabelBinarizer().fit_transform(host_list)
@@ -309,17 +308,17 @@ def train_models(model_to_test, save_path):
                             )
 
     model.save(
-        (
-            save_path 
-            + model_name 
-            + "_" 
-            + str(model_ver_num) 
-            + "_"
-            + str(fold) 
-            + "_" 
-            + 'Model.tf'
+                (
+                    save_path 
+                    + model_name 
+                    + "_" 
+                    + str(model_ver_num) 
+                    + "_"
+                    + str(fold) 
+                    + "_" 
+                    + 'Model.tf'
+                )
             )
-        )
     
     graph_history(history, model_name, model_ver_num, fold, save_path)
             
@@ -430,18 +429,18 @@ for train_index, test_index in kf.split(features):
     input_layer_dim = len(X[0])
 
     model_to_test = {
-        "model_shape" : [model_size], # defines the hidden layers of the model
-        "model_name"  : [model_name],
-        "input_layer_dim"  : [input_layer_dim], # size of input layer
-        "model_ver_num"  : [0],
-        "fold"  : [fold], # kf.split number on
-        "labels"   : [y_train],
-        "features" : [X_train],
-        "classes"  : [classes_default],
-        "outputs"   : [outputs_default],
-        "compile_loss": [{'host_group': 'categorical_crossentropy'}],
-        "compile_metrics" :[{'host_group': 'accuracy'}]
-        }
+                        "model_shape" : [model_size], # defines the hidden layers of the model
+                        "model_name"  : [model_name],
+                        "input_layer_dim"  : [input_layer_dim], # size of input layer
+                        "model_ver_num"  : [0],
+                        "fold"  : [fold], # kf.split number on
+                        "labels"   : [y_train],
+                        "features" : [X_train],
+                        "classes"  : [classes_default],
+                        "outputs"   : [outputs_default],
+                        "compile_loss": [{'host_group': 'categorical_crossentropy'}],
+                        "compile_metrics" :[{'host_group': 'accuracy'}]
+                    }
 
     # Call function to train all the models from the dictionary
     model, history = train_models(model_to_test, savedir)

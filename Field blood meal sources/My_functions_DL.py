@@ -16,18 +16,29 @@ import pandas as pd
 from random import randint
 from collections import Counter 
 
-from sklearn.model_selection import ShuffleSplit, train_test_split, KFold 
-from sklearn.metrics import confusion_matrix, classification_report, f1_score, recall_score, precision_score
+from sklearn.model_selection import (
+                                        ShuffleSplit, 
+                                        train_test_split, 
+                                        KFold
+                                    )
+from sklearn.metrics import (
+                                confusion_matrix, 
+                                classification_report, 
+                                f1_score, 
+                                recall_score, 
+                                precision_score
+                            )
 
 import matplotlib.pyplot as plt # for making plots
 import seaborn as sns
 
-sns.set(context = "paper",
-        style = "white",
-        palette = "deep",
-        font_scale = 2.0,
-        color_codes = True,
-        rc = ({"font.family": "Dejavu Sans"})
+sns.set(
+            context = "paper",
+            style = "white",
+            palette = "deep",
+            font_scale = 2.0,
+            color_codes = True,
+            rc = ({"font.family": "Dejavu Sans"})
         )
 # %matplotlib inline
 
@@ -51,18 +62,18 @@ def build_folder(Fold, to_build = False):
 # Function for plotting confusion matrcies
 
 def plot_confusion_matrix(
-    cm, 
-    classes,  
-    save_path, 
-    model_name, 
-    fold,
-    normalize = True,
-    title = 'Confusion matrix',
-    xrotation = 0,
-    yrotation = 0,
-    cmap = plt.cm.Blues,
-    printout = False
-    ):
+                            cm, 
+                            classes,  
+                            save_path, 
+                            model_name, 
+                            fold,
+                            normalize = True,
+                            title = 'Confusion matrix',
+                            xrotation = 0,
+                            yrotation = 0,
+                            cmap = plt.cm.Blues,
+                            printout = False
+                        ):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -103,18 +114,18 @@ def plot_confusion_matrix(
     plt.ylabel('True Host', weight = 'bold')
     plt.xlabel('Predicted Host', weight = 'bold')
     plt.savefig(
-        (
-            save_path 
-            + "Confusion_Matrix_" 
-            + model_name 
-            + "_" 
-            + fold 
-            + "_" 
-            + ".png"
-            ), 
-            dpi = 500, 
-            bbox_inches = "tight"
-            )
+                    (
+                        save_path 
+                        + "Confusion_Matrix_" 
+                        + model_name 
+                        + "_" 
+                        + fold 
+                        + "_" 
+                        + ".png"
+                    ), 
+                        dpi = 500, 
+                        bbox_inches = "tight"
+                )
 
     plt.close()
 
@@ -123,14 +134,14 @@ def plot_confusion_matrix(
 
 # for visualizing losses and metrics once the neural network fold is trained
 def visualize(
-    histories, 
-    save_path, 
-    model_name, 
-    fold, 
-    classes, 
-    predicted, 
-    true
-    ):
+                histories, 
+                save_path, 
+                model_name, 
+                fold, 
+                classes, 
+                predicted, 
+                true
+            ):
 
     # Sort out predictions and true labels
 
@@ -157,12 +168,12 @@ def log_data(log, name, fold, save_path):
 # Graphing the training data and validation
  
 def graph_history(
-    history, 
-    model_name, 
-    model_ver_num, 
-    fold, 
-    save_path
-    ):
+                    history, 
+                    model_name, 
+                    model_ver_num, 
+                    fold, 
+                    save_path
+                ):
 
     #not_validation = list(filter(lambda x: x[0:3] != "val", history.history.keys()))
     
@@ -180,17 +191,17 @@ def graph_history(
         plt.xlabel("epoch", weight = 'bold')
         plt.ylabel(i)
         plt.savefig(
-            save_path 
-            + model_name 
-            + "_" 
-            + str(model_ver_num) 
-            + "_"+str(fold) 
-            + "_" 
-            + i 
-            + ".png", 
-            dpi = 500, 
-            bbox_inches = "tight"
-            )
+                        save_path 
+                        + model_name 
+                        + "_" 
+                        + str(model_ver_num) 
+                        + "_"+str(fold) 
+                        + "_" 
+                        + i 
+                        + ".png", 
+                        dpi = 500, 
+                        bbox_inches = "tight"
+                    )
         # plt.savefig(save_path +model_name+"_"+str(model_ver_num)+"_"+str(fold)+"_"+i + ".pdf", dpi = 500, bbox_inches="tight")
         plt.close()
 
@@ -223,34 +234,34 @@ def set_plot_history_data(ax, history, which_graph):
     # when graphing loss the first few epochs may skew the (loss) graph
     
     ax.plot(
-        epochs[trim:], 
-        train[trim:], 
-        'b', 
-        label = ('accuracy')
-        )
+                epochs[trim:], 
+                train[trim:], 
+                'b', 
+                label = ('accuracy')
+            )
 
     ax.plot(
-        epochs[trim:], 
-        train[trim:], 
-        'b', 
-        linewidth = 15, 
-        alpha = 0.1
-        )
+                epochs[trim:], 
+                train[trim:], 
+                'b', 
+                linewidth = 15, 
+                alpha = 0.1
+            )
     
     ax.plot(
-        epochs[trim:], 
-        valid[trim:], 
-        'orange', 
-        label = ('val_accuracy')
-        )
+                epochs[trim:], 
+                valid[trim:], 
+                'orange', 
+                label = ('val_accuracy')
+            )
 
     ax.plot(
-        epochs[trim:], 
-        valid[trim:], 
-        'orange', 
-        linewidth = 15, 
-        alpha = 0.1
-        )
+                epochs[trim:], 
+                valid[trim:], 
+                'orange', 
+                linewidth = 15, 
+                alpha = 0.1
+            )
 
 
 def graph_history_averaged(combined_history):
@@ -258,11 +269,11 @@ def graph_history_averaged(combined_history):
     print('averaged_histories.keys : {}'.format(combined_history.keys()))
     
     fig, (ax1) = plt.subplots(
-        nrows = 1,
-        ncols = 1,
-        figsize = (6, 4),
-        sharex = True
-        )
+                                nrows = 1,
+                                ncols = 1,
+                                figsize = (6, 4),
+                                sharex = True
+                            )
 
     set_plot_history_data(ax1, combined_history, 'accuracy')
     
@@ -280,10 +291,10 @@ def graph_history_averaged(combined_history):
     plt.tight_layout()
     plt.grid(False)
     plt.savefig(
-        "C:\Mannu\Projects\Mannu Phd\Transfer_learning MLP\_transfer_learning\Averaged_graph_base_model.png", 
-        dpi = 500, 
-        bbox_inches = "tight"
-        )
+                "C:\Mannu\Projects\Mannu Phd\Transfer_learning MLP\_transfer_learning\Averaged_graph_base_model.png", 
+                dpi = 500, 
+                bbox_inches = "tight"
+            )
     plt.close()
 
 #%%
@@ -330,3 +341,21 @@ def find_mean_from_combined_dicts(combined_dicts):
         dict_of_means[key_value] = mean_value.tolist()
     
     return dict_of_means
+
+#%%
+
+# Function to calculate Human bloodmeal index (HBI)
+
+def human_blood_index(beta, alpha):
+
+    '''
+    The formular to calculate blood index
+
+    beta: for PCR; Number of mosquitoes blood-fed on human/
+          for ML; Number of mosquitoes predicted as human blood-fed
+    alpha: for PCR; Total number of mosquitoes for ML testset (human & bovine)/
+           for ML; Total number of predicted blood-fed mosquitoes
+    '''
+    bi = beta/alpha
+
+    return bi

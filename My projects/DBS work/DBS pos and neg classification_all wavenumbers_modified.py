@@ -4,8 +4,6 @@
 
 # The analysis script was adapted from https://github.com/SimonAB/Gonzalez-Jimenez_MIRS; and has been changed to accommodate this specific analysis 
 
-import this
-
 # Importing all packages that my be needed for the analysis
 import os
 import ast
@@ -16,9 +14,9 @@ from tqdm import tqdm
 
 import numpy as np 
 import pandas as pd  
-import scipy.stats as stats
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
+# import scipy.stats as stats
+# import statsmodels.api as sm
+# import statsmodels.formula.api as smf
 
 from random import randint
 from collections import Counter 
@@ -42,7 +40,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import Normalizer
 
-from imblearn.ensemble import EasyEnsemble
+# from imblearn.ensemble import EasyEnsemble
 
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.ensemble import RandomForestClassifier
@@ -132,7 +130,7 @@ def plot_confusion_matrix(cm, classes,
 
 #%%
 
-df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\Cleaned datamosquitos_mwanga.csv")
+df = pd.read_csv(r"C:\Users\mwang\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\Cleaned datamosquitos_mwanga.csv")
 print(df.head())
 df.describe()
 
@@ -147,7 +145,7 @@ class_counts
 
 #%%
 
-df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\Cleaned datamosquitos_mwanga.csv")
+# df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\Cleaned datamosquitos_mwanga.csv")
 X = df.iloc[:,4:] # defining X matrix
 y = df["Status"] # defining Y matrix
 X
@@ -169,17 +167,17 @@ print(train_index.shape, val_index.shape)
 # Saving a training split to the disk
 df.iloc[train_index,:]
 training_DBS = df.iloc[train_index,:]
-training_DBS.to_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
+# training_DBS.to_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
 
 #%%
 # Saving a validation split to the disk
 df.iloc[val_index,:]
 validation_DBS = df.iloc[val_index,:]
-validation_DBS.to_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_validation.csv")
+# validation_DBS.to_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_validation.csv")
 
 #%%
 # importing the training split; for ML training
-df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
+df = pd.read_csv(r"C:\Users\mwang\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
 print(df.head(5))
 
 # df = df.drop(['Species', 'Status', 'Country', 
@@ -262,15 +260,15 @@ plt.ylim(0.50, 1.00)
 plt.yticks((0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80,
 0.85, 0.90, 0.95, 1.0))
 plt.ylabel('Accuracy', weight = "bold");
-plt.savefig("Algorithm selection_newR.png", dpi = 300, bbox_inches="tight")
+# plt.savefig("Algorithm selection_newR.png", dpi = 300, bbox_inches="tight")
 
 
 #%%
 # importing the training split; for ML training
-df = pd.read_csv("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
+df = pd.read_csv(r"C:\Users\mwang\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\DBS_train.csv")
 print(df.head(5))
 
-df = df.drop(['Species'], axis=1)
+df = df.drop(['Species', 'Unnamed: 0.1', 'Unnamed: 0', 'StoTime'], axis=1)
 
 df.head(5)
 
@@ -283,7 +281,7 @@ df.head(5)
 
 #%%
 
-X = df.iloc[:,4:] # defining X matrix of features
+X = df.iloc[:,1:] # defining X matrix of features
 y = df["Status"] # defining Y vector
 X
 
@@ -301,7 +299,7 @@ seed = 4 # pick any integer. This ensures reproducibility of the tests
 scoring = 'accuracy' # score model accuracy
 
 # preparing the model
-classifier =LogisticRegressionCV(Cs = 20,
+classifier =LogisticRegressionCV(Cs = 10,
                                 fit_intercept = True, 
                                 cv = sss, 
                                 dual = False, 
@@ -309,7 +307,7 @@ classifier =LogisticRegressionCV(Cs = 20,
                                 scoring = None, 
                                 solver = 'lbfgs', 
                                 tol = 1e-4, 
-                                max_iter = 2000, 
+                                max_iter = 6000, 
                                 class_weight = 'balanced', 
                                 n_jobs = -1, 
                                 verbose = 1, 
@@ -368,7 +366,12 @@ for train_index, test_index in sss.split(X, y):
     # combine outputs
     sss_coef = pd.merge(sss_coef, coef_table, left_index=True, right_index=True, how='outer')
 
-    local_sss_results=pd.DataFrame([("Accuracy",accuracy_score(y_test, y_pred)), ("params",str(grid_result.best_params_)), ("TRAIN",str(train_index)), ("TEST",str(test_index)), ("CM", local_cm), ("Classification report", local_report)]).T
+    local_sss_results=pd.DataFrame([("Accuracy",accuracy_score(y_test, y_pred)), 
+                                    ("params",str(grid_result.best_params_)), 
+                                    ("TRAIN",str(train_index)), 
+                                    ("TEST",str(test_index)), 
+                                    ("CM", local_cm), 
+                                    ("Classification report", local_report)]).T
         
     local_sss_results.columns=local_sss_results.iloc[0]
     local_sss_results = local_sss_results[1:]
@@ -399,31 +402,33 @@ print(lgr_acc_distrib)
 
 #%%
 # summarizing coefficients
-sss_coef.dropna(axis=1, inplace=True)
-sss_coef["coef mean"] = sss_coef.mean(axis=1)
-sss_coef["coef sem"] = sss_coef.sem(axis=1)
-sss_coef.to_csv("coef_repeatedCV_coef.csv")
-sss_coef = pd.read_csv("coef_repeatedCV_coef.csv")
+sss_coef_2 = sss_coef
+sss_coef_2.dropna(axis=1, inplace=True)
+sss_coef_2["coef mean"] = sss_coef_2.mean(axis=1)
+sss_coef_2["coef sem"] = sss_coef_2.sem(axis=1)
+# # sss_coef.to_csv("coef_repeatedCV_coef.csv")
+# sss_coef = pd.read_csv("coef_repeatedCV_coef.csv")
 
 
 #%% plotting coefficients
-n_features = 10
-sss_coef = pd.read_csv("coef_repeatedCV_coef.csv")
-sss_coef.sort_values(by="coef mean", ascending=False, inplace=True)
-coef_plot_data = sss_coef.drop(["coef sem", "coef mean"], axis=1).T
-coef_plot_data = coef_plot_data.iloc[1:,:].drop(coef_plot_data.columns[n_features:-n_features], axis=1)
+n_features = 25
+# sss_coef = pd.read_csv("coef_repeatedCV_coef.csv")
+sss_coef_2.sort_values(by = "coef mean", ascending = False, inplace = True)
 
+coef_plot_data = sss_coef_2.drop(["coef sem", "coef mean"], axis = 1).T
+coef_plot_data = coef_plot_data.iloc[:,:].drop(coef_plot_data.columns[n_features:-n_features], axis=1)
+coef_plot_data
 
 sns.set(context="paper",
     style="white",
     font_scale=2.0,
     rc={"font.family": "Dejavu Sans"})
 
-plt.figure(figsize=(6,8))
+plt.figure(figsize=(6,16))
 sns.barplot(data=coef_plot_data, orient="h", palette="RdYlBu", capsize=.2)
 plt.ylabel("Wavenumbers", weight = "bold")
 plt.xlabel("Coeffients", weight = "bold")
-plt.savefig("D:\OneDrive\Documents\MANNU - Spectra data\DBS for measuring malaria prevalence\Round 2 PCR\Atmos smoothed\PCR vs MIRS + ML - 80 - 20\ML analysis\lgr_coeffients-2_responsetoreview.png", dpi = 300, bbox_inches="tight")
+plt.savefig("C:\Mannu\Projects\Mwanga-DBS work\Parasite age\Binary_age\lgr_coef_old_paper.png", dpi = 300, bbox_inches="tight")
 
 
 #%%

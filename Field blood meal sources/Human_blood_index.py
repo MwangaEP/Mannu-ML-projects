@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from collections import Counter
 
+from My_functions_DL import human_blood_index
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -15,25 +17,25 @@ import matplotlib.pyplot as plt
 
 # Function to calculate Human bloodmeal index (HBI)
 
-def human_blood_index(beta, alpha):
+# def human_blood_index(beta, alpha):
 
-    '''
-    The formular to calculate blood index
+#     '''
+#     The formular to calculate blood index
 
-    beta: for PCR; Number of mosquitoes blood-fed on human/
-          for ML; Number of mosquitoes predicted as human blood-fed
-    alpha: for PCR; Total number of mosquitoes for ML testset (human & bovine)/
-           for ML; Total number of predicted blood-fed mosquitoes
-    '''
-    bi = beta/alpha
+#     beta: for PCR; Number of mosquitoes blood-fed on human/
+#           for ML; Number of mosquitoes predicted as human blood-fed
+#     alpha: for PCR; Total number of mosquitoes for ML testset (human & bovine)/
+#            for ML; Total number of predicted blood-fed mosquitoes
+#     '''
+#     bi = beta/alpha
 
-    return bi
+#     return bi
 
 #%%
 
 # calculate the human blood index MIRS prediction using field model
 
-lr_pred_df = pd.read_csv('C:\Mannu\Projects\Mannu Phd\Final analysis\Results\Logistic regression\cm_labeld_.csv')
+lr_pred_df = pd.read_csv('C:\Mannu\Projects\Mannu Phd\Final analysis\Results\Logistic regression\cm_labeld_2.csv')
 print(lr_pred_df)
 
 # Access the number of predicted and actual samples from the dataframe
@@ -69,7 +71,7 @@ actual_tl_human = tl_pred_df.iloc[1, 1] + tl_pred_df.iloc[1, 2]
 HBI_pcr_tl = human_blood_index(actual_tl_human, total_predicted_tl)
 print('HBI estimated by PCR_tl', np.round(HBI_pcr_tl, 2))
 
-# for LR predictions
+# for MLP predictions
 HBI_tl = human_blood_index(number_human_pred_tl, total_predicted_tl)
 print('HBI estimated by tl', np.round(HBI_tl, 2))
 

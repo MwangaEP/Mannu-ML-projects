@@ -1,0 +1,360 @@
+---
+title: "host_blood analysis"
+output: html_notebook
+---
+
+This notebook assess mosquito blood meal sources 
+
+Data description
+
+An experiment was conducted in Tulizamoyo to to assess the proportion of two Anopheles mosquito Species: An. funestus and An.  arabiensis (species), blood feeding on vertebrates (host_blood). The experiment was done in a field setting, and mosquitoes were collected in different houses (hh_id), using different traps (trap_method), indoors and outdoors (position). PCR targeting 
+cytocrome b was performed on the samples collected, and the number of amplified samples were recorded (count).
+
+Key question: What type of host do anopheles mosquitoes prefer to feed on, when the host availability is almost 50/50? 
+
+```{r}
+
+rm(list = ls())
+# list.files()
+
+```
+
+Load all required packages 
+
+```{r}
+
+library(lme4, warn.conflicts = FALSE) # for generalized linear mixed effect models
+library(MASS, warn.conflicts = FALSE) # for generalized models
+suppressWarnings(library(tidyverse, warn.conflicts = FALSE)) # for data cleaning and manipulation
+library(data.table, v) # import data table package to factor Xticks
+library(ggplot2, warn.conflicts = FALSE) # for plotting
+library(effects, warn.conflicts = FALSE)
+library(ggeffects, warn.conflicts = FALSE)
+library(sjPlot, warn.conflicts = FALSE)
+
+```
+
+load data
+
+```{r}
+
+
+# setwd("C:/Mannu/Projects/Mannu Phd/GLM_metadata")
+metadata_df <- read.csv("C:/Mannu/Projects/Mannu Phd/GLM_metadata/_blood_meal_metadata_final.csv")
+
+# factor house hold id column
+metadata_df[,'hh_id'] <- as.factor(metadata_df[,'hh_id'])
+
+# drop unused column
+metadata_df <- select(metadata_df, -X)
+
+# first print to the console all of the unique values you will need to recode)
+print(distinct(metadata_df, host_blood))
+
+# view data
+glimpse(metadata_df)
+
+```
+
+Recode all cow written factors as bovine
+
+```{r}
+
+
+metadata_df$host_blood <- recode(metadata_df$host_blood,
+                                      Human_cow = "Human_bovine",
+                                      Cow_dog = "Bovine_dog")
+metadata_df$host_blood <- factor(metadata_df$host_blood, levels = c("Human", "Bovine", "Dog", 
+                                                                    "Human_bovine", "Human_dog", "Bovine_dog"))
+
+
+print(distinct(metadata_df, host_blood))
+
+```
+
+
+Exploring the data and visualizing the data
+
+```{r}
+
+# table() is a useful function for understanding the study design
+# that produced the data set
+
+print(table(metadata_df$host_blood)) 
+print(table(metadata_df$species))
+
+```
+
+```{r}
+# # mosquito species blood-fed on vertebrate
+
+table(metadata_df$host_blood, metadata_df$species)
+
+```
+
+```{r}
+
+sumC <- tapply(metadata_df$count, list(metadata_df$host_blood,     metadata_df$species, metadata_df$position, metadata_df$trap_method), sum)
+sumC
+
+```
+
+
+```{r}
+
+
+meanC <- tapply(metadata_df$count, list(metadata_df$host_blood, metadata_df$species, metadata_df$position), mean)
+meanC
+
+```
+
+Explanatory Plotting
+
+```{r}
+
+ggplot(metadata_df, aes(x = host_blood, y = count)) +
+  geom_boxplot(aes(fill = host_blood)) + # distinguish mosquito species by color
+  geom_dotplot(binaxis="y", binwidth=4, stackdir="center", fill=1, alpha = 0.5) + # plot row data
+  stat_summary(fun = mean, colour = "red", geom = "point", # add mean summary to the plot
+  shape = 15, size = 4, show.legend = FALSE) + # estimate mean of the raw data
+  facet_wrap(~ species) + # divide the data by Host to make two plot for host
+  theme_bw() +
+  ylab(expression(bold("No. of bloodfed mosquitoes"))) + # name y label
+  xlab(expression(bold("Host"))) + # name X label
+  theme(text = element_text(size = 18), # adjust font size
+        legend.position = "none",
+        axis.text.x = element_text(margin = margin(t = 0, r = 0, b = 13, l = 0), angle = 90, vjust = 0.5, hjust = 1)) # create space between
+
+```
+
+```{r}
+
+ggplot(metadata_df, aes(x = host_blood, y = count, fill = host_blood)) + # distinguish host by color
+  geom_boxplot(width = 0.5) + 
+  geom_dotplot(binaxis="y", binwidth=4, stackdir="center", fill=1, alpha = 0.5) + # plot row data
+  stat_summary(fun = mean, colour = "red", geom = "point",
+               shape = 15, size = 5,show.legend = FALSE) + # add mean summary
+  theme_bw() +
+  ylab(expression(bold("No. of bloodfed mosquitoes"))) +
+  xlab(expression(bold("Host"))) +
+  theme(text = element_text(size = 18), # adjust plot font size
+        legend.position = "none",
+        axis.text.x = element_text(margin = margin(t = 0, r = 0, b = 13, l = 0), angle = 90, vjust = 0.5, hjust = 1))
+
+
+```
+
+
+*Model Fitting*
+
+House hold Id will be treated as the random effects because we aren’t interested in generalizing their effects beyond the experiment.
+
+Host, mosquito species, position, and trap method are treated as fixed/explanatory variables because the purpose of the experiment is to generalize the HOST preference on the number of mosquitoes blood fed on different vertebrates .
+
+The response variable count (no. of mosquitoes blood fed on a particular host), is modeled against the explanatory variables:
+
+(1) Host (different vertebrate which mosquito blooed-fed) - a factor with six levels 
+
+(2) Position (indoor/outdoor collection) - a factor with two levels
+
+(3) Species (An. funestus/An. arabiensis) - a factor with two levels
+
+and INDIVIDUALS (different individuals used in the study) as a random effect
+
+*Null hypothesis*
+
+N0: Anopheles mosquitoes prefer to bite humans than other vertebrate.
+
+Since our response variable is a count, then Poisson GLMM will be a suitable model structure. 
+
+We will <glmer> to fit a number of different models from complicated to simple, and likelihood ration test to test the importance of each variable in the model
+
+
+```{r}
+
+
+model1 <- glmer(count ~ host_blood + species + position + (1|hh_id), family = poisson, data = metadata_df)
+summary(model1)
+
+
+# RR <- exp(coef(summary(model1))[,1])
+# lower <- exp(coef(summary(model1))[,1] + qnorm(.025)*coef(summary(a1))[,2])
+# upper <- exp(coef(summary(model1))[,1] + qnorm(.975)*coef(summary(a1))[,2])
+# users_indoors = cbind(RR, lower, upper, pvalue=coef(summary(model1))[,4])
+
+
+```
+
+function to estimate and test over dispersion
+
+from https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html
+
+
+```{r}
+
+# Checking for over dispersion 
+
+overdisp_fun <- function(model) {
+  rdf <- df.residual(model)
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df = rdf, lower.tail = FALSE)
+  c(chisq = Pearson.chisq, ratio = prat, rdf = rdf, p = pval)
+}
+# This can also be done using overdisp.glmer() function in RVAideMemoire package. 
+# library(RVAideMemoire) 
+# overdisp.glmer(model3)
+
+# but for now, let's use the function we have just created.
+# Null hypothesis: There is no overdispersion in model 1
+
+overdisp_fun(model1)
+
+```
+There is over dispersion in model1 (ratio 2.5, where 1 is optimal, and P < 0.001 for the null hypothesis no over dispersion)
+
+We can consider refit the model using a negative binomial GLMM (zero inflated model to account for over dispersion)
+
+
+```{r}
+
+
+model2 <- glmer.nb(count ~ host_blood + species + position + (1|hh_id), data = metadata_df)
+summary(model2)
+
+print(overdisp_fun(model2))
+
+```
+
+Checking whether variables have effect on the model, we will use anova to compare the base model with the new model
+
+Model 3: 
+Null hypothesis: Host has no effect, drop host from the model
+
+```{r}
+
+model3.no.host <- glmer.nb(count ~ species + position + (1|hh_id), data = metadata_df)
+summary(model3.no.host)
+
+```
+
+```{r}
+
+anova(model2, model3.no.host)
+
+
+```
+
+From anova, we reject the null hypothesis that host has no effect on the model. we accept the alternative hypothesis that host has effect given LRT: DF = 5, chisq = 50.3, p < 0.001
+
+Model 4: 
+Null hypothesis: species has no effect, drop species from the model
+
+```{r}
+
+model4.no.species <- glmer.nb(count ~ host_blood + position + (1|hh_id), data = metadata_df)
+summary(model4.no.species)
+
+```
+
+```{r}
+
+anova(model2, model4.no.species)
+
+
+```
+
+From anova, we reject the null hypothesis that species has no effect on the model. we accept the alternative hypothesis that species has effect given LRT: DF = 1, chisq = 6.9, p < 0.001
+
+Model 5: 
+Null hypothesis: position has no effect, drop position from the model
+
+```{r}
+
+model5.no.position <- glmer.nb(count ~ host_blood + species + (1|hh_id), data = metadata_df)
+summary(model5.no.position)
+
+```
+
+
+```{r}
+
+anova(model2, model5.no.position)
+
+```
+
+From anova, we accept the null hypothesis that position has no effect on the model,  given LRT: DF = 1, chisq = 1.9, p > 0.05
+
+Refit the final model without position
+
+```{r}
+metadata_df_new = filter(metadata_df, host_blood != "Human_dog" & host_blood != "Bovine_dog")
+final.model = glmer.nb(count ~ host_blood + species + (1|hh_id), data = metadata_df_new)
+summary(final.model)
+
+```
+Inspect model
+
+
+```{r}
+
+plot(resid(final.model))
+hist(resid(final.model))
+plot(final.model)
+
+# check the Q-Q plot, to evaluate the assumption of normality of 
+# the residuals.
+plot_model(final.model, type = "diag") 
+
+# plot(allEffects(final.model)) # plot all model effects
+plot(predictorEffects(final.model, ~ host_blood))
+
+```
+
+
+
+
+Exponentiation of the coefficients to get relative ratios, 95 CI values and report results of this final model
+
+```{r}
+
+RR <- exp(coef(summary(final.model))[,1])
+lower <- exp(coef(summary(final.model))[,1] + qnorm(.025)*coef(summary(final.model))[,2])
+upper <- exp(coef(summary(final.model))[,1] + qnorm(.970)*coef(summary(final.model))[,2])
+cbind(RR, lower, upper, pvalue = coef(summary(final.model))[,4])
+
+```
+
+Plotting figures from the model estimates
+
+```{r}
+
+df_hosts <- ggpredict(final.model, terms = c("host_blood"), ci.lvl = 0.95)
+
+ggplot(df_hosts, aes(x = x, y = predicted)) +
+  # scale_fill_manual(values = c("gray60")) +
+  geom_bar(fill = "lightblue", color = "lightblue", alpha = .4,  stat = "identity", width = 0.6) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1) +
+  theme_bw() +
+  ylab(expression(bold("# of bloodfed mosquitoes"))) +
+  xlab(expression(bold(" "))) +
+  theme(text = element_text(size = 17), # adjust plot font size
+        # aspect.ratio = 1/1,
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(margin = margin(t = 0, r = 0, b = 13, l = 0), angle = 90, vjust = 0.5, hjust = 1))
+
+df_hosts
+
+```
+
+
+```{r}
+
+```
+
+
+
+
