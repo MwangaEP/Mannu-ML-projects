@@ -9,7 +9,8 @@ import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import scipy.stats as stats
-import pymer4.models as pmm 
+# import pymer4.models as pmm 
+from statsmodels import graphics
 from statsmodels.graphics.regressionplots import plot_leverage_resid2
 
 from collections import Counter 
@@ -40,8 +41,7 @@ print(par_df.shape)
 # Checking class distribution in the data
 print(Counter(par_df["Cat1"]))
 
-# drops columns of no interest
-# train_data = [par_age_df].drop(['Unnamed: 0'], axis = 1)
+# view dataset, first ten raws
 par_df.head(10)
 
 
@@ -101,13 +101,6 @@ print(Counter(par_df_2["Infection"]))
 
 
 #%%
-# # Drop control from the data and classify only
- 
-# par_df_2 = par_df_2.loc[par_df_2['Age'] != 'Early control']
-# par_df_2 = par_df_2.loc[par_df_2['Age'] != 'Early rings']
-
-# print(Counter(par_df_2["Treatment"])) # count the number of levels in the column and their size
-
 
 # Since the resolution of the spectra data is 2cm, 2300 may not be available in the colummn names, 
 # Check whats the closest number
@@ -121,97 +114,86 @@ col_names = temp_df.columns.tolist()
 col_names = [int(x) for x in col_names]
 
 # get the closest wavenumbers
-print(list(map(lambda y:min(col_names, key=lambda x:abs(x - y)), [2400])))
-print(list(map(lambda y:min(col_names, key=lambda x:abs(x - y)), [1720])))
+start_col_1 = list(map(lambda y:min(col_names, key=lambda x:abs(x - y)), [3855]))
+end_col_1 = list(map(lambda y:min(col_names, key=lambda x:abs(x - y)), [3650]))
 
-# set the start and end column names as integers
-start_col = 2401 #2301
-end_col = 1721 #1801
+start_col_2 = list(map(lambda y:min(col_names, key=lambda x:abs(x - y)), [2500]))
+end_col_2 = list(map(lambda y:min(col_names, key=lambda x:abs(x - y)), [1700]))
 
-# get the column names between the start and end column
-cols_to_drop = [str(i) for i in range(start_col, end_col - 1, -2)]
-
-par_df_2 = par_df_2.drop(cols_to_drop, axis=1)
-
-par_df_2.head()
-
-#%%
-
-# get the closest wavenumbers to 3855 and 3700
-
-print(list(map(lambda y:min(col_names, key=lambda x:abs(x - y)), [3855])))
-print(list(map(lambda y:min(col_names, key=lambda x:abs(x - y)), [3700])))
-
-# set the start and end column names as integers
-start_col_2 = 3855
-end_col_2 = 3701
+print(start_col_1)
+print(end_col_1)
+print(start_col_2)
+print(end_col_2)
 
 # get the column names between the start and end column
-cols_to_drop_2 = [str(i) for i in range(start_col_2, end_col_2 - 1, -2)]
+cols_to_drop_1 = [str(i) for i in range(int(start_col_1[0]), int(end_col_1[0]) - 1, -2)]
+cols_to_drop_2 = [str(i) for i in range(int(start_col_2[0]), int(end_col_2[0]) - 1, -2)]
 
+
+par_df_2 = par_df_2.drop(cols_to_drop_1, axis=1)
 par_df_2 = par_df_2.drop(cols_to_drop_2, axis=1)
 
 par_df_2.head()
 
 #%%
 
-# Early rings and Early control datasets
-
-# par_df_early = par_df_2.loc[par_df_2['Age'] != 'Early control']
-# par_df_early = par_df_early.loc[par_df_early['Age'] != 'Early rings']
-
 # count the number of levels in the column and their size
-print(Counter(par_df_2 ["Age"]))
+print(Counter(par_df_2["Age"]))
 
-# loading important wavenumbers for only early control vs early rings
+# loading important wavenumbers for only early rings vs late rings
+important_wavenumb = pd.read_json(
+                                    'C:\Mannu\Projects\Mwanga-DBS work\Parasite age\ML analysis\Early_Late\wavenumbers_coef_11.txt',
+                                    orient = 'records', 
+                                    lines = True 
+                                )
 
-with open('C:\Mannu\Projects\Mwanga-DBS work\Parasite age\Background_wn_removed\late control vs late rings lgr\important_wavenumbers.txt') as json_file:
-    important_wavenumb_early = json.load(json_file)
-
-important_wavenumb_early = important_wavenumb_early[:10]
-important_wavenumb_early.append("Age")
-important_wavenumb_early.append("Infection")
-
-print(important_wavenumb_early)
+# get the column names
+important_wavenumb_2 = [str(item) for item in list(important_wavenumb.columns)]
 
 # select the columns
-par_early_selected_df = par_df_2.loc[:, important_wavenumb_early]
+par_selected_wn_df = par_df_2.loc[:, important_wavenumb_2]
 
-# par_early_selected_df.loc[par_early_selected_df.Age == 'Early control', 'Age'] = 'Early'
-# par_early_selected_df.loc[par_early_selected_df.Age == 'Early rings', 'Age'] = 'Early'
-# par_early_selected_df.loc[par_early_selected_df.Age == 'Late control', 'Age'] = 'Late'
-# par_early_selected_df.loc[par_early_selected_df.Age == 'Late rings', 'Age'] = 'Late'
+# Append age and infection in the dataset
+par_selected_wn_df['Age'] = Age
+par_selected_wn_df['Infection'] = Infection
 
-par_early_selected_df['Age'].replace('Early control', 'Early', inplace=True)
-par_early_selected_df['Age'].replace('Early rings', 'Early', inplace=True)
-par_early_selected_df['Age'].replace('Late control', 'Late', inplace=True)
-par_early_selected_df['Age'].replace('Late rings', 'Late', inplace=True)
+# Rename age columns to have only two categories for the red blood cells, either early or late
+par_selected_wn_df['Age'].replace('Early control', 'Early', inplace = True)
+par_selected_wn_df['Age'].replace('Early rings', 'Early', inplace = True)
+par_selected_wn_df['Age'].replace('Late control', 'Late', inplace = True)
+par_selected_wn_df['Age'].replace('Late rings', 'Late', inplace = True)
 
-# par_early_selected_df.to_csv("C:\Mannu\Projects\Mwanga-DBS work\Parasite age\Background_wn_removed\late control vs late rings\glm_earlyrings_df.csv", index=False)
-par_early_selected_df
+# par_selected_wn_df .to_csv("C:\Mannu\Projects\Mwanga-DBS work\Parasite age\Background_wn_removed\late control vs late rings\glm_earlyrings_df.csv", index=False)
+par_selected_wn_df 
 
 #%%
 
 # Subset the data to only include the variables of interest
-early_data_1 = par_early_selected_df[['3639', 'Age', 'Infection' ]]
+# glm_df = par_selected_wn_df[['2553', 'Age', 'Infection']]
+glm_df = par_selected_wn_df 
 
 # Convert 'age' and 'Infection' columns to category data type
-early_data_1['Age'] = early_data_1['Age'].astype('category')
-early_data_1['Infection'] = early_data_1['Infection'].astype('category')
+glm_df['Age'] = glm_df['Age'].astype('category')
+glm_df['Infection'] = glm_df['Infection'].astype('category')
 
 ###################
 
 # Balance categories in the data
 # Group the data by the two columns and get the size of each group
-group_sizes = early_data_1.groupby(['Infection', 'Age']).size()
+group_sizes = glm_df.groupby(['Infection', 'Age']).size()
 
 # Find the minimum group size
 min_size = group_sizes.min()
 
 # Sample min_size number of rows from each group to create a new dataframe with balanced classes
-balanced_data = early_data_1.groupby(['Infection', 'Age'], group_keys=False).apply(lambda x: x.sample(min_size))
+balanced_data = glm_df.groupby(
+                                ['Infection', 'Age'],
+                                group_keys = False
+                            ).apply(lambda x: x.sample(min_size))
+
 print(balanced_data.groupby(['Infection', 'Age']).size())
 
+#%%
 # We will use the likelihood functions from both models to test whether the alternative 
 # model fits the data better, compared to the null model. Mathematically, the comparison is made 
 # easier by using the log of the likelihoods. The statistic calculated from a likelihood ratio 
@@ -225,7 +207,12 @@ print(balanced_data.groupby(['Infection', 'Age']).size())
 # #     p = stats.chisqprob(lr, 1) # llmax has 1 degrees of freedom more than llmin
 # #     return lr, p
 
-full_model = sm.GLM.from_formula("Q('3639') ~ Age + Infection + Age:Infection", data=balanced_data, family=sm.families.Gaussian())
+full_model = sm.GLM.from_formula(
+                                    "Q('3613') ~ Age + Infection + Age:Infection", 
+                                    data = balanced_data, 
+                                    family = sm.families.Gaussian()
+                                )
+
 full_model_results = full_model.fit()
 print(full_model_results.summary())
 
@@ -236,7 +223,12 @@ print(full_model_results.summary())
 # Get the log-likelihood statistic for the full model
 # llf_full_model = np.round(full_model_results.llf, 2) 
 
-reduced_model = sm.GLM.from_formula("Q('3639') ~ Age + Infection", data=balanced_data, family=sm.families.Gaussian())
+reduced_model = sm.GLM.from_formula(
+                                        "Q('3613') ~ Age + Infection", 
+                                        data = balanced_data, 
+                                        family = sm.families.Gaussian()
+                                    )
+                                
 reduced_model_results = reduced_model.fit()
 print(reduced_model_results.summary())
 
@@ -269,50 +261,35 @@ print('p-value:', p)
 # compare the coefficients for Infection in M2 and M3, as this will indicate the size of the effect of Infection 
 # that is actually due to Age.
 
-reduced_model = sm.GLM.from_formula("Q('3639') ~ Age + Infection", data=balanced_data, family=sm.families.Gaussian())
+reduced_model = sm.GLM.from_formula(
+                                        "Q('3613') ~ Age + Infection", 
+                                        data = balanced_data, 
+                                        family = sm.families.Gaussian()
+                                    )
+
 reduced_model_results = reduced_model.fit()
 print(reduced_model_results.summary())
 
-reduced_model_age = sm.GLM.from_formula("Q('3639') ~ Age", data=balanced_data, family=sm.families.Gaussian())
+#%%
+
+reduced_model_age = sm.GLM.from_formula(
+                                            "Q('3613') ~ Age", 
+                                            data = balanced_data, 
+                                            family = sm.families.Gaussian())
 reduced_model_age_results = reduced_model_age.fit()
 print(reduced_model_age_results.summary())
 
 # %%
 
+reduced_model_inf = sm.GLM.from_formula(
+                                            "Q('3613') ~ Infection", 
+                                            data = balanced_data, 
+                                            family = sm.families.Gaussian())
+reduced_model_inf_results = reduced_model_inf.fit()
 
-# # specify model formula
-# formula = "Q('3645') + Q('2437') ~ Age + Infection"
+# Q-Q Plot
+graphics.gofplots.qqplot(reduced_model_inf_results.resid_deviance, line = 'r')
 
-# # fit binomial GLM
-# model = sm.formula.glm(formula = formula, data = balanced_data, family=sm.families.Binomial()).fit()
-
-# # print model summary
-# print(model.summary())
-
-# %%
-
-test_df = pd.read_csv(r"C:\Mannu\Projects\Training ML\NgowoDataFinal23.csv")
-
-test_df['Village'] = test_df['Village'].astype('category')
-# test_model = smf.glm('Angambiae ~ Position + Temperature + Humidity + (1|Village)', data=test_df, family = sm.families.NegativeBinomial(alpha=1))
-# test_model_results = test_model.fit()
-# print(test_model_results.summary())
-
-# # Fit Poisson MLM
-# model = sm.GLM(test_df["Angambiae"], test_df[["Position", "Temperature", "Humidity"]], family=sm.families.Poisson())
-
-# # Add random effects
-# model = model.fit(formula = "Angambiae ~ Position + Temperature + Humidity + (1 | Village)", groups = test_df["Village"])
-
-# # Print summary
-# print(model.summary())
-
-# %%
-
-# Fit the model with negative binomial distribution
-model = pmm.Lmer("Angambiae ~ Position + Temperature + Humidity + (1 | Village)", data = test_df, family='negbin').fit()
-
-print(model.summary())
-
+print(reduced_model_inf_results.summary())
 
 # %%
