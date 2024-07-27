@@ -7,6 +7,7 @@
 import os
 import io
 import ast
+import json
 import itertools
 import collections
 from time import time
@@ -765,12 +766,12 @@ sss_coef_2 = sss_coef
 sss_coef_2.dropna(axis = 1, inplace = True)
 sss_coef_2["coef mean"] = sss_coef_2.mean(axis = 1)
 sss_coef_2["coef sem"] = sss_coef_2.sem(axis = 1)
-# sss_coef_2.to_csv("coef_repeatedCV_coef.csv")
+sss_coef_2.to_csv("repeatedCV_coef.csv", index = False)
 
 #%% 
 
 # plotting coefficients
-n_features = 25
+n_features = 11
 # coef = pd.read_csv("coef_repeatedCV_coef.csv")
 # coef_2 = coef.rename(columns = {'Unnamed: 0': 'Wavenumbers'})
 
@@ -784,7 +785,7 @@ sss_coef_2.sort_values(
 
 coef_plot_data = sss_coef_2.drop(["coef sem", "coef mean"], axis=1).T
 coef_plot_data = coef_plot_data.iloc[:,:].drop(coef_plot_data.columns[n_features:-n_features], axis=1)
-coef_plot_data_late = coef_plot_data
+# coef_plot_data_late = coef_plot_data
 
 sns.set(context="paper",
     style="white",
@@ -806,5 +807,10 @@ plt.savefig(
                 dpi = 300, 
                 bbox_inches = "tight"
             )
+
+# %%
+with open(generate_path('wavenumbers_coef_11.txt'), 'w') as outfile:
+    coef_plot_data.to_json(outfile, orient = 'records', lines = True)
+    #  json.dump(coef_plot_data, outfile)
 
 # %%

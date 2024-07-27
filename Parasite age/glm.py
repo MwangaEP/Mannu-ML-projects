@@ -208,7 +208,7 @@ print(balanced_data.groupby(['Infection', 'Age']).size())
 # #     return lr, p
 
 full_model = sm.GLM.from_formula(
-                                    "Q('3613') ~ Age + Infection + Age:Infection", 
+                                    "Q('3633') ~ Age + Infection + Age:Infection", 
                                     data = balanced_data, 
                                     family = sm.families.Gaussian()
                                 )
@@ -224,7 +224,7 @@ print(full_model_results.summary())
 # llf_full_model = np.round(full_model_results.llf, 2) 
 
 reduced_model = sm.GLM.from_formula(
-                                        "Q('3613') ~ Age + Infection", 
+                                        "Q('3633') ~ Age + Infection", 
                                         data = balanced_data, 
                                         family = sm.families.Gaussian()
                                     )
@@ -262,7 +262,7 @@ print('p-value:', p)
 # that is actually due to Age.
 
 reduced_model = sm.GLM.from_formula(
-                                        "Q('3613') ~ Age + Infection", 
+                                        "Q('3633') ~ Age + Infection", 
                                         data = balanced_data, 
                                         family = sm.families.Gaussian()
                                     )
@@ -273,23 +273,26 @@ print(reduced_model_results.summary())
 #%%
 
 reduced_model_age = sm.GLM.from_formula(
-                                            "Q('3613') ~ Age", 
+                                            "Q('3633') ~ Age", 
                                             data = balanced_data, 
-                                            family = sm.families.Gaussian())
+                                            family = sm.families.Gaussian()
+                                        )
 reduced_model_age_results = reduced_model_age.fit()
 print(reduced_model_age_results.summary())
 
 # %%
 
 reduced_model_inf = sm.GLM.from_formula(
-                                            "Q('3613') ~ Infection", 
+                                            "Q('3633') ~ Infection", 
                                             data = balanced_data, 
-                                            family = sm.families.Gaussian())
+                                            family = sm.families.Gaussian()
+                                        )
 reduced_model_inf_results = reduced_model_inf.fit()
+print(reduced_model_inf_results.summary())
+
+#%%
 
 # Q-Q Plot
 graphics.gofplots.qqplot(reduced_model_inf_results.resid_deviance, line = 'r')
-
-print(reduced_model_inf_results.summary())
 
 # %%

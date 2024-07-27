@@ -1,6 +1,6 @@
 
 #%%
-# This program uses standard machine learning to learn parasite age, late rings vs late control
+# This program uses standard machine learning to assess redblood cell ageing 
 
 # import all libraries
 
@@ -49,10 +49,13 @@ from sklearn.metrics import (
                                 precision_recall_fscore_support
                             )
 
+# from mlxtend.feature_selection import SequentialFeatureSelector as SFS
+# from mlxtend.plotting import plot_sequential_feature_selection as plot_sfs
+
 from imblearn.under_sampling import RandomUnderSampler
 
 # from sklearn.linear_model import LogisticRegressionCV
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
@@ -82,8 +85,8 @@ plt.rcParams["figure.figsize"] = [6, 4]
 def plot_confusion_matrix(cm, classes,
                           normalize = True,
                           title = 'Confusion matrix',
-                          xrotation=0,
-                          yrotation=0,
+                          xrotation = 0,
+                          yrotation = 0,
                           cmap=plt.cm.Purples,
                           printout = False):
     """
@@ -117,7 +120,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xticks(
                 tick_marks, 
                 classes, 
-                rotation = 90
+                rotation = xrotation
             )
 
     plt.yticks(
@@ -142,7 +145,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xlabel('True label', weight = 'bold')
     plt.savefig(
                     (
-                        r"C:\Mannu\Projects\Mwanga-DBS work\Parasite age\ML analysis\Contr_early_late_rings\Confusion_Matrix_" 
+                        r"C:\Mannu\Projects\Mwanga-DBS work\Parasite age\ML analysis\late_rings_model_gen\Confusion_Matrix_" 
                         + figure_name 
                         + "_" 
                         + ".png"
@@ -153,7 +156,7 @@ def plot_confusion_matrix(cm, classes,
 
 #%%
 #  Define the base directory
-base_directory = r"C:\Mannu\Projects\Mwanga-DBS work\Parasite age\ML analysis\Contr_early_late_rings"
+base_directory = r"C:\Mannu\Projects\Mwanga-DBS work\Parasite age\ML analysis\late_rings_model_gen"
 
 # Create a function to generate paths within the base directory
 def generate_path(*args):
@@ -204,12 +207,11 @@ print(Counter(par_df["Cat1"]))
 # train_data = [par_age_df].drop(['Unnamed: 0'], axis = 1)
 par_df.head(10)
 
-
 #%%
 
 # rename factors in variable (Cat1) to make it more informative
 
-Treatment = []
+Treatment, Infection = [], []
 
 for row in par_df['Cat1']:
 
@@ -229,53 +231,76 @@ for row in par_df['Cat1']:
 
 par_df['Treatment'] = Treatment
 
+# rename factors in variable (Cat1) to make define infection status
+
+for row in par_df['Cat1']:
+
+    if row == 'EC':
+        Infection.append('Negative')
+    
+    elif row == 'LC':
+        Infection.append('Negative')
+    
+    elif row == 'ET':
+        Infection.append('Positive')
+
+    else:
+        Infection.append('Positive')
+
+
+par_df['Infection'] = Infection
+
+# Drop control from the data and classify only early eings
+ 
+# par_df = par_df.loc[par_df['Treatment'] != 'Early rings']
+# par_df = par_df.loc[par_df['Treatment'] != 'Early control']
+
 # count the number of levels in the column and their size
 print(Counter(par_df["Treatment"])) # count the number of levels in the column and their size
-
+print(Counter(par_df["Infection"]))
 
 #%%
 # Split training and test data
 
 train_set, test_set = train_test_split(
                                         par_df, 
-                                        stratify = par_df[["Treatment", "Cat2"]], 
-                                        test_size = 0.2, 
+                                        stratify = par_df[["Treatment", "Infection", "Cat2"]], 
+                                        test_size = 0.1, 
                                         shuffle = True, 
                                         random_state = 42
                                     )
 
 # Count the number of samples in treatment group
 
-print('number of samples per infection status : {}'.format(Counter(train_set['Treatment'])))
+print('number of samples per infection status : {}'.format(Counter(train_set['Infection'])))
 
 #%%
 
-# drop the column with age as a string and keep the age in intergers
+# drop the unused olumns
 
 train_set_2 = train_set.drop(
                         [
                             'Cat1', 
                             'Cat2', 
                             'Cat3',
-                            'Cat5' 
+                            'Cat5',
+                            'Treatment' 
                         ], axis = 1
                     )
 
 train_set_2.head(5)
 
 # Checking class distribution in the data
-print(Counter(train_set_2["Treatment"]))
-
+print(Counter(train_set_2["Infection"]))
 
 #%%
-
 # Dropping regions that has no spectra information. 
 
 # Since the resolution of the spectra data is 2cm, 2300 may not be available in the colummn names, 
 # Check whats the closest number
 
 # drop treatment column
-temp = train_set_2.drop(['Treatment'], axis = 1)
+temp = train_set_2.drop(['Infection'], axis = 1)
 
 # make a list containing all column names
 column_names = temp.columns.tolist()
@@ -309,7 +334,7 @@ train_set_3.head()
 # define X (matrix of features) and y (list of labels)
 
 X = np.asarray(train_set_3.iloc[:,:-1]) # select all columns except the first one 
-y = np.asarray(train_set_3["Treatment"])
+y = np.asarray(train_set_3["Infection"])
 
 # Balance the training data
 rus = RandomUnderSampler(random_state = 42)
@@ -344,7 +369,7 @@ models.append(
 models.append(
                 (
                     'LR', LogisticRegression(
-                                                multi_class = 'multinomial', 
+                                                multi_class = 'ovr', 
                                                 max_iter = 2000, 
                                                 random_state = seed
                                             )
@@ -354,12 +379,23 @@ models.append(
 models.append(
                 (
                     'SVM', SVC(
-                                kernel = 'rbf', 
+                                kernel = 'linear', 
                                 gamma = 'auto', 
                                 random_state = seed
                             )
                 )
             )
+
+models.append(
+                (
+                    'SDG', SGDClassifier(
+                                            loss = "hinge", 
+                                            penalty = "l2", 
+                                            max_iter = 4000
+                                        )
+                )
+            )
+
 
 models.append(
                 (
@@ -420,6 +456,7 @@ results_df.rename(
                     columns = {'variable':'Model', 'value':'Accuracy'}, 
                     inplace = True
                 )
+results_df
 
 
 # Plotting the algorithm selection 
@@ -453,12 +490,13 @@ plt.savefig(
 scoring = 'accuracy' # metric for model evaluation
 
 # model
-
 classifier = LogisticRegression(
-                                    multi_class = 'multinomial', 
+                                    multi_class = 'ovr', 
                                     random_state = seed, 
-                                    max_iter = 6000
+                                    max_iter = 6000,
+                                    warm_start = True
                                 )
+
 
 # Optimizing hyper-parameters for logistic regression
 
@@ -470,6 +508,23 @@ c_values = [0.01, 0.1, 1, 10]     # 100, 50, 20,  10, 5]
 random_grid = {'solver': solvers,
                'C': c_values}
 
+# classifier = XGBClassifier()
+
+# estimators = [500, 1000]
+# rate = [0.05, 0.10, 0.15, 0.20, 0.30]
+# depth = [2, 3, 4, 5, 6, 8, 10, 12, 15]
+# child_weight = [1, 3, 5, 7]
+# gamma = [0.0, 0.1, 0.2, 0.3, 0.4]
+# bytree = [0.1, 0.2, 0.3, 0.4, 0.5, 0.7]
+
+# random_grid = {
+#               'n_estimators': estimators, 
+#               'learning_rate': rate, 
+#               'max_depth': depth,
+#               'min_child_weight': child_weight, 
+#               'gamma': gamma, 
+#               'colsample_bytree': bytree
+#               }
 
 # prepare matrices of results
 kf_results = pd.DataFrame() # model parameters and global accuracy score
@@ -486,110 +541,113 @@ num_rounds = 5
 
 start = time()
 
-for round in range(num_rounds):
-    # SEED = np.random.randint(0, 81470)
+# for round in range(num_rounds):
+#     # SEED = np.random.randint(0, 8147)
+for train_index, test_index in kf.split(scl_features, y_res):
 
-    for train_index, test_index in kf.split(scl_features, y_res):
+    # Split data into test and train
 
-        # Split data into test and train
+    X_train_set, X_val = scl_features[train_index], scl_features[test_index]
+    y_train_set, y_val = y_res[train_index], y_res[test_index]
 
-        X_train_set, X_val = scl_features[train_index], scl_features[test_index]
-        y_train_set, y_val = y_res[train_index], y_res[test_index]
-
-        # check the shape the splits
-        print(X_train_set.shape)
-        print(y_train_set.shape)
-        print(X_val.shape)
-        print(y_val.shape)
-            
-        # generate models using all combinations of settings
-        # RANDOMSED GRID SEARCH
-        n_iter_search = 10
-        rsCV = RandomizedSearchCV(
-                                    verbose = 1, 
-                                    estimator = classifier, 
-                                    param_distributions = random_grid, 
-                                    n_iter = n_iter_search, 
-                                    scoring = scoring, 
-                                    cv = kf
-                                )
-            
-        rsCV_result = rsCV.fit(X_train_set, y_train_set)
-
-        # print out results and give hyperparameter settings for best one
-        means = rsCV_result.cv_results_['mean_test_score']
-        stds = rsCV_result.cv_results_['std_test_score']
-        params = rsCV_result.cv_results_['params']
-        for mean, stdev, param in zip(means, stds, params):
-            print("%.2f (%.2f) with: %r" % (mean, stdev, param))
-
-        # print best parameter settings
-        print(
-                "Best: %.2f using %s" % (
-                                            rsCV_result.best_score_,
-                                            rsCV_result.best_params_
-                                        )
-            )
-
-        # Insert the best parameters identified by randomized grid search into the base classifier
-        best_classifier = classifier.set_params(**rsCV_result.best_params_)
-
-        # Fitting the best classifier
-        best_classifier.fit(X_train_set, y_train_set)
-
-        # Predict X_test
-        y_pred = best_classifier.predict(X_val)
-
-        # Summarize outputs for plotting averaged confusion matrix
-
-        for predicted, true in zip(y_pred, y_val):
-            save_predicted.append(predicted)
-            save_true.append(true)
-
-        # summarize for plotting per class distribution
-
-        local_cm = confusion_matrix(y_val, y_pred)
-        local_report = classification_report(y_val, y_pred)
-
-        # append coefficients to dataframes
-
-        coef_table = pd.Series(
-                                best_classifier.coef_[0], 
-                                train_set_3.iloc[:,:-1].columns
+    # check the shape the splits
+    print(X_train_set.shape)
+    print(y_train_set.shape)
+    print(X_val.shape)
+    print(y_val.shape)
+        
+    # generate models using all combinations of settings
+    # RANDOMSED GRID SEARCH
+    n_iter_search = 10
+    rsCV = RandomizedSearchCV(
+                                verbose = 1, 
+                                estimator = classifier, 
+                                param_distributions = random_grid, 
+                                n_iter = n_iter_search, 
+                                scoring = scoring, 
+                                cv = kf
                             )
+        
+    rsCV_result = rsCV.fit(X_train_set, y_train_set)
 
-        coef_table = pd.DataFrame(coef_table)
-        sss_coef = pd.concat(
-                                [
-                                    sss_coef, 
-                                    coef_table
-                                ], 
-                                axis = 1, 
-                                ignore_index = True
-                            )
+    # print out results and give hyperparameter settings for best one
+    means = rsCV_result.cv_results_['mean_test_score']
+    stds = rsCV_result.cv_results_['std_test_score']
+    params = rsCV_result.cv_results_['params']
+    for mean, stdev, param in zip(means, stds, params):
+        print("%.2f (%.2f) with: %r" % (mean, stdev, param))
 
-        # # Coefficients are in log format, exponentiate to get odds
-        # odds_table_contr = pd.Series(np.exp(classifier.coef_[0]), par_df_2.iloc[:,:-1].columns)
-        # odds_table_contr = pd.DataFrame(odds_table_contr)
-        # sss_odds_contr = pd.merge(sss_odds_contr, odds_table_contr, left_index=True, right_index=True, how='outer')
+    # print best parameter settings
+    print(
+            "Best: %.2f using %s" % (
+                                        rsCV_result.best_score_,
+                                        rsCV_result.best_params_
+                                    )
+        )
 
-    
-        local_kf_results = pd.DataFrame(
-                                            [
-                                                ("Accuracy", accuracy_score(y_val, y_pred)),
-                                                ("params",str(rsCV_result.best_params_)),
-                                                ("TRAIN",str(train_index)),
-                                                ("TEST",str(test_index)),
-                                                ("CM", local_cm),
-                                                ("Classification report",
-                                                local_report)
-                                            ]
-                                        ).T
+    # Insert the best parameters identified by randomized grid search into the base classifier
+    best_classifier = classifier.set_params(**rsCV_result.best_params_)
 
-        local_kf_results.columns = local_kf_results.iloc[0]
-        local_kf_results = local_kf_results[1:]
+    # best_classifier = SVC(
+    #                         kernel = 'linear', 
+    #                         gamma = 'auto', 
+    #                         random_state = seed
+    #                     )
+    # Fitting the best classifier
+    best_classifier.fit(X_train_set, y_train_set)
 
-        kf_results = pd.concat(
+    # Predict X_test
+    y_pred = best_classifier.predict(X_val)
+
+    # Summarize outputs for plotting averaged confusion matrix
+
+    for predicted, true in zip(y_pred, y_val):
+        save_predicted.append(predicted)
+        save_true.append(true)
+
+    # summarize for plotting per class distribution
+
+    local_cm = confusion_matrix(y_val, y_pred)
+    local_report = classification_report(y_val, y_pred)
+
+    # append coefficients to dataframes
+
+    coef_table = pd.Series(
+                            best_classifier.coef_[0], 
+                            train_set_3.iloc[:,:-1].columns
+                        )
+
+    coef_table = pd.DataFrame(coef_table)
+    sss_coef = pd.concat(
+                            [
+                                sss_coef, 
+                                coef_table
+                            ], 
+                            axis = 1, 
+                            ignore_index = True
+                        )
+
+    # # Coefficients are in log format, exponentiate to get odds
+    # odds_table_contr = pd.Series(np.exp(classifier.coef_[0]), par_df_2.iloc[:,:-1].columns)
+    # odds_table_contr = pd.DataFrame(odds_table_contr)
+    # sss_odds_contr = pd.merge(sss_odds_contr, odds_table_contr, left_index=True, right_index=True, how='outer')
+
+    local_kf_results = pd.DataFrame(
+                                        [
+                                            ("Accuracy", accuracy_score(y_val, y_pred)),
+                                            ("params",str(rsCV_result.best_params_)),
+                                            ("TRAIN",str(train_index)),
+                                            ("TEST",str(test_index)),
+                                            ("CM", local_cm),
+                                            ("Classification report",
+                                            local_report)
+                                        ]
+                                    ).T
+
+    local_kf_results.columns = local_kf_results.iloc[0]
+    local_kf_results = local_kf_results[1:]
+
+    kf_results = pd.concat(
                             [
                                 kf_results, 
                                 local_kf_results
@@ -598,10 +656,10 @@ for round in range(num_rounds):
                             join = 'outer'
                         ).reset_index(drop = True)
 
-        # per class accuracy
-        local_support = precision_recall_fscore_support(y_val, y_pred)[3]
-        local_acc = np.diag(local_cm)/local_support
-        kf_per_class_results.append(local_acc)
+    # per class accuracy
+    local_support = precision_recall_fscore_support(y_val, y_pred)[3]
+    local_acc = np.diag(local_cm)/local_support
+    kf_per_class_results.append(local_acc)
 
 # save the trained model to disk for future use
 
@@ -609,16 +667,16 @@ for round in range(num_rounds):
 
 elapsed = time() - start
 print("Time elapsed: {0:.2f} minutes ({1:.1f} sec)".format(
-    elapsed / 60, elapsed))
+elapsed / 60, elapsed))
 
 
- # %%
+# %%
 
 # plot confusion averaged for the validation set
 figure_name = 'baseline_model'
 classes = np.unique(np.sort(y_val))
 
-plt.figure(figsize = (8, 6))
+plt.figure(figsize = (6, 4))
 visualize(
             figure_name, 
             classes, 
@@ -645,14 +703,14 @@ rf_per_class_acc_distrib_describe.to_csv(generate_path('_rf_per_class_acc_distri
 #%%
 # plotting class distribution
 
-plt.figure(figsize = (8, 6))
+plt.figure(figsize = (6, 4))
 
 rf_per_class_acc_distrib = pd.melt(
                                     rf_per_class_acc_distrib, 
                                     var_name = "Label new"
                                 )
 
-# g = sns.pointplot(x="Label new", y="value", join = False, hue = "Label new",
+# g = sns.pointplot(x = "Label new", y = "value", join = False, hue = "Label new",
 #                 capsize = .1, scale= 4.5, errwidth = 4,
                 # data = rf_per_class_acc_distrib)
 
@@ -660,12 +718,11 @@ g = sns.violinplot(
                     x = "Label new", 
                     y = "value", 
                     hue = "Label new",
-                    data = rf_per_class_acc_distrib,
-                    cut = 1
+                    data = rf_per_class_acc_distrib
                 )
 
 sns.despine(left = True)
-plt.xticks(ha = "right", rotation = 90)
+plt.xticks(ha = "right")
 plt.yticks()
 plt.yticks(np.arange(0.2, 1.0 + .1, step = 0.2))
 plt.xlabel(" ")
@@ -680,20 +737,22 @@ plt.savefig(
             )
 
 #%%
+# Prepare test set
 
 test_set_2 = test_set.drop(
-                        [
-                            'Cat1', 
-                            'Cat2', 
-                            'Cat3',
-                            'Cat5' 
-                        ], axis = 1
-                    )
+                            [
+                                'Cat1', 
+                                'Cat2', 
+                                'Cat3',
+                                'Cat5',
+                                'Treatment' 
+                            ], axis = 1
+                        )
 
 test_set_2.head(5)
 
 # Checking class distribution in the test data
-print(Counter(test_set_2["Treatment"]))
+print(Counter(test_set_2["Infection"]))
 
 # drop wavenumbers that are just noise 
 test_set_3 = test_set_2.drop(
@@ -704,7 +763,7 @@ test_set_3 = test_set_2.drop(
 test_set_3 = test_set_3.drop(
                                 cols_to_drop_2, 
                                 axis = 1
-                            )
+                            )                            
 
 test_set_3.head()
 
@@ -713,7 +772,7 @@ test_set_3.head()
 # define X (matrix of features) and y (list of labels)
 
 X_test = np.asarray(test_set_3.iloc[:,:-1]) # select all columns except the last
-y_test = np.asarray(test_set_3["Treatment"])
+y_test = np.asarray(test_set_3["Infection"])
 
 # generates output predictions based X_test passed
 
@@ -737,7 +796,7 @@ print(cr_pca)
 
 # save classification report to disk as a csv
 
-cr = pd.read_fwf(io.StringIO(cr_pca), header=0)
+cr = pd.read_fwf(io.StringIO(cr_pca), header = 0)
 cr = cr.iloc[0:]
 cr.to_csv(generate_path('classification_report.csv'))
 
@@ -748,7 +807,8 @@ cr.to_csv(generate_path('classification_report.csv'))
 figure_name = 'Test_set'
 classes = np.unique(np.sort(y_test))
 
-plt.figure(figsize = (8, 6))
+plt.figure(figsize = (6, 4))
+
 visualize(
             figure_name, 
             classes, 
@@ -757,6 +817,7 @@ visualize(
         )
 
 # %%
+
 # summarizing coefficients
 sss_coef_2 = sss_coef
 sss_coef_2.dropna(axis = 1, inplace = True)
@@ -764,8 +825,9 @@ sss_coef_2["coef mean"] = sss_coef_2.mean(axis = 1)
 sss_coef_2["coef sem"] = sss_coef_2.sem(axis = 1)
 # sss_coef_2.to_csv("coef_repeatedCV_coef.csv")
 
+#%% 
 
-#%% plotting coefficients
+# plotting coefficients
 n_features = 25
 # coef = pd.read_csv("coef_repeatedCV_coef.csv")
 # coef_2 = coef.rename(columns = {'Unnamed: 0': 'Wavenumbers'})
@@ -777,7 +839,7 @@ sss_coef_2.sort_values(
                         ascending = False, 
                         inplace = True
                     )
-                    
+
 coef_plot_data = sss_coef_2.drop(["coef sem", "coef mean"], axis=1).T
 coef_plot_data = coef_plot_data.iloc[:,:].drop(coef_plot_data.columns[n_features:-n_features], axis=1)
 coef_plot_data_late = coef_plot_data
@@ -802,5 +864,166 @@ plt.savefig(
                 dpi = 300, 
                 bbox_inches = "tight"
             )
+
+# %%
+
+# Predict unseen data from the field
+# load unseen data
+
+unseen_df = pd.read_csv(
+                            generate_path("DBS_field_2019_2.dat"), 
+                            delimiter = '\t'
+                        )
+print(unseen_df.shape)
+unseen_df.head()
+
+#%%
+
+# Rename columns names forlabels to be more informative
+unseen_df.rename(columns = {'Cat3':'Infection'}, inplace = True) 
+
+temp_row = []
+for row in unseen_df['Infection']:
+    if row == "NG":
+        temp_row.append('Negative')
+    else:
+        temp_row.append('Positive')
+
+unseen_df['Infection'] = temp_row
+
+
+# Checking class distribution in the data
+print(Counter(unseen_df["Infection"]))
+
+#%%
+# Prepare unseen set
+
+unseen_df_2 = unseen_df.drop(
+                                [
+                                    'Cat1', 
+                                    'ID', 
+                                    'StoTime', 
+                                ], 
+                                axis = 1
+                            )
+
+unseen_df_2.head(5)
+
+#%%
+
+# Checking class distribution in the test data
+print(Counter(unseen_df_2["Infection"]))
+
+# drop wavenumbers that are just noise 
+unseen_df_2 = unseen_df_2.drop(
+                                cols_to_drop_1, 
+                                axis = 1
+                            )
+
+unseen_df_2 = unseen_df_2.drop(
+                                cols_to_drop_2, 
+                                axis = 1
+                            )                            
+
+unseen_df_2.head()
+
+#%%
+# define X (matrix of features) and y (list of labels)
+
+X_test_field = np.asarray(unseen_df_2.iloc[:,1:]) # select all columns except the last
+y_test_field = np.asarray(unseen_df_2["Infection"])
+
+# generates output predictions based X_test passed
+
+# Scale features
+X_test_field_scl = scaler.transform(X = X_test_field)
+
+# Prediction
+predictions_field = best_classifier.predict(X_test_field_scl)
+
+# Examine the accuracy of the model in predicting glasgow data 
+
+accuracy_field = accuracy_score(y_test_field, predictions_field)
+print("Accuracy:%.2f%%" %(accuracy_field * 100.0))
+
+#%%
+# compute precision, recall and f-score metrics
+
+cr_unseen = classification_report(y_test_field, predictions_field, labels = classes)
+print(cr_unseen)
+
+
+# save classification report to disk as a csv
+
+cr_temp = pd.read_fwf(io.StringIO(cr_unseen), header = 0)
+cr_temp = cr_temp.iloc[0:]
+cr_temp.to_csv(generate_path('classification_report_unseen_field.csv'))
+
+
+#%%
+figure_name = 'unseen_field'
+classes = np.unique(np.sort(y_test))
+
+plt.figure(figsize = (6, 4))
+
+visualize(
+            figure_name, 
+            classes, 
+            predictions_field, 
+            y_test_field
+        )
+
+# %%
+# Field species prediction
+# transfer learning
+
+X_train_temp, X_test_temp, y_train_temp, y_test_temp = train_test_split(
+                                                                            X_test_field_scl, 
+                                                                            y_test_field, 
+                                                                            test_size = 0.85, 
+                                                                            random_state = 42
+                                                                        )
+
+print(X_train_temp.shape)
+print(y_train_temp.shape)
+
+# transfer_model = classifier.fit(
+#                                 X_train_temp, 
+#                                 y_train_temp, 
+#                                 xgb_model = best_classifier.get_booster()
+#                             ) 
+
+transfer_model = best_classifier.fit(X_train_temp, y_train_temp)
+
+# Prediction
+field_pred_trans = transfer_model.predict(X_test_temp)
+
+field_accuracy_trans = accuracy_score(y_test_temp, field_pred_trans)
+print("Accuracy: %.2f%%" % (field_accuracy_trans * 100.0))
+
+# %%
+
+# compute precision, recall and f-score metrics
+
+cr_unseen_trans = classification_report(y_test_temp, field_pred_trans, labels = classes)
+print(cr_unseen_trans)
+
+# save classification report to disk as a csv
+
+cr_temp_trans = pd.read_fwf(io.StringIO(cr_unseen_trans), header = 0)
+cr_temp_trans = cr_temp_trans.iloc[0:]
+cr_temp_trans.to_csv(generate_path('classification_report_unseen_field_transfer.csv'))
+
+# %%
+figure_name = 'unseen_field_trans'
+
+plt.figure(figsize = (6, 4))
+
+visualize(
+            figure_name, 
+            classes, 
+            field_pred_trans, 
+            y_test_temp
+        )
 
 # %%
