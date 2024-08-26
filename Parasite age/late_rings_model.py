@@ -69,7 +69,7 @@ sns.set(
             context = "paper",
             style = "white",
             palette = "deep",
-            font_scale = 2.0,
+            font_scale = 1.5,
             color_codes = True,
             rc = ({'font.family': 'Dejavu Sans'})
         )
@@ -87,7 +87,7 @@ def plot_confusion_matrix(cm, classes,
                           title = 'Confusion matrix',
                           xrotation = 0,
                           yrotation = 0,
-                          cmap=plt.cm.Purples,
+                          cmap=plt.cm.Blues,
                           printout = False):
     """
     This function prints and plots the confusion matrix.
@@ -807,7 +807,7 @@ cr.to_csv(generate_path('classification_report.csv'))
 figure_name = 'Test_set'
 classes = np.unique(np.sort(y_test))
 
-plt.figure(figsize = (6, 4))
+plt.figure(figsize = (5, 3))
 
 visualize(
             figure_name, 
@@ -962,9 +962,15 @@ cr_temp.to_csv(generate_path('classification_report_unseen_field.csv'))
 
 #%%
 figure_name = 'unseen_field'
-classes = np.unique(np.sort(y_test))
+# classes = np.unique(np.sort(y_test))
+classes = ['Positive', 'Negative']
 
-plt.figure(figsize = (6, 4))
+sns.set(context = "paper",
+    style = "white",
+    font_scale = 1.1,
+    rc = {"font.family": "Dejavu Sans"})
+
+plt.figure(figsize = (6, 2))
 
 visualize(
             figure_name, 
